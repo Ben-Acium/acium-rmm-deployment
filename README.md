@@ -8,7 +8,7 @@ Each subfolder targets a specific RMM platform and contains the scripts, along w
 
 | Folder | Platform | Contents |
 |---|---|---|
-| [`dattormm/`](dattormm/readme.md) | Datto RMM | Deployment script for the Acium Sensor agent |
+| [`dattormm/`](dattormm/) | Datto RMM | Deployment script for the Acium Sensor agent |
 
 ## Adding a new script
 
