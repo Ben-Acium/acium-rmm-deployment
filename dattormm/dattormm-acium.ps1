@@ -377,11 +377,24 @@ try {
 
     # Build the argument list for msiexec.exe (Windows' built-in installer
     # engine, used to run any .msi file):
-    #   /i <path>   = install this MSI
-    #   /qn         = "quiet, no UI" — fully silent, no popups
-    #   /norestart  = don't auto-reboot the machine even if the install wants to
-    #   /l*v <path> = write a verbose log of the install to this file,
-    #                 useful for troubleshooting if something goes wrong
+    #   /i <path>          = install this MSI
+    #   REINSTALL=ALL      = force Windows Installer to (re)write all
+    #   REINSTALLMODE=vomus  features/files/registry even if this ProductCode
+    #                        is already registered on the machine (e.g. the
+    #                        sensor was installed manually, or a previous run
+    #                        didn't get to save state). Without this, /i alone
+    #                        fails with error 1638 ("Another version of this
+    #                        product is already installed") whenever the MSI's
+    #                        ProductCode is already registered — this package
+    #                        keeps the same ProductCode across versions, only
+    #                        PackageCode/ProductVersion change, so that's a
+    #                        normal case here, not an edge case. These
+    #                        properties are harmless/no-op on a genuinely
+    #                        fresh install.
+    #   /qn                = "quiet, no UI" — fully silent, no popups
+    #   /norestart         = don't auto-reboot the machine even if the install wants to
+    #   /l*v <path>        = write a verbose log of the install to this file,
+    #                        useful for troubleshooting if something goes wrong
     #
     # We pass this as an actual PowerShell array, not one big manually
     # quoted string. Start-Process knows how to correctly pass each array
@@ -391,6 +404,8 @@ try {
     # ever contains a space or a PowerShell host handles it unexpectedly.
     $msiArgs = @(
         '/i', $msiFile.FullName,
+        'REINSTALL=ALL',
+        'REINSTALLMODE=vomus',
         '/qn',
         '/norestart',
         '/l*v', $MsiLogFile
