@@ -21,12 +21,16 @@
 .NOTES
     CONFIGURATION: Unlike the Datto RMM version of this script (which reads
     AgentDownloadUrl from a Component Variable set in Datto's UI), this
-    version hardcodes the download URL directly in SECTION 1 below. Bumping
-    to a new agent version means editing $DownloadUrl in this script and
-    redeploying it — there is no external variable to update instead. This
-    trades "edit a variable, not the script" for "works identically under
-    any RMM platform (or run manually), since nothing depends on a
-    platform-specific variable/parameter mechanism."
+    version hardcodes the download URL and organization ID directly in
+    SECTION 1 below. Bumping to a new agent version means editing
+    $DownloadUrl in this script and redeploying it — there is no external
+    variable to update instead. This trades "edit a variable, not the
+    script" for "works identically under any RMM platform (or run
+    manually), since nothing depends on a platform-specific
+    variable/parameter mechanism." $Organization (optional) sets which
+    organization/tenant the installed sensor reports under, passed to the
+    MSI as the ORGANIZATION property when set; leave it blank to install
+    without that property.
 
     RECURRING-RUN NOTE: Since this script may run on a schedule (not just
     once), it needs a reliable way to know "did anything actually change
@@ -74,7 +78,25 @@ $ErrorActionPreference = 'Stop'
 # and redeploy the script when a new agent version needs to go out.
 $DownloadUrl = 'https://storage.googleapis.com/ebm-sensors-prod/win/acium-sensor-setup.zip'
 
+# The organization/tenant ID this sensor should report under. Passed to the
+# MSI as the ORGANIZATION property (the installer's own log shows it accepts
+# this as a SecureCustomProperty and has a dedicated OrganizationIdComponent
+# for it). Optional — leave blank to install without setting it. Since this
+# script is meant to be baked per-deployment, set this to the ID for
+# whichever organization these endpoints belong to when one applies.
+$Organization = ''
+
 # --- END CONFIGURABLE VALUES ---
+
+# The MSI's ProductCode GUID for Acium Sensor. This stays constant across
+# versions (only PackageCode/ProductVersion change with each release). We use
+# it in SECTION 7 to check via Windows Installer's own ProductState API
+# whether this product is already installed on the machine — that check is
+# what decides whether the install command below needs REINSTALL=ALL /
+# REINSTALLMODE=vomus (only correct for an actual reinstall/repair) or a
+# plain /i (needed for a genuine first-time install — see the comment above
+# $msiArgs in SECTION 7 for why this distinction matters).
+$ProductCode = '{8F3A2E1D-6B4C-4F7E-9A5B-2C8D1E9F3A7B}'
 
 # Where we'll write log files and temporarily store the downloaded package.
 # ProgramData is used because it's writable by SYSTEM and survives reboots,
@@ -137,13 +159,16 @@ Write-Log "Running as: $currentIdentity"
 
 # Bail out early if the download URL configured above is blank. Exit code 4
 # signals "this is a configuration problem", not a download or install
-# failure — someone editing the script left $DownloadUrl empty.
+# failure — someone editing the script left a required value empty.
 if (-not $DownloadUrl) {
     Write-Log "ERROR: Missing required configuration value (`$DownloadUrl is empty in SECTION 1)."
     exit 4
 }
 
 Write-Log "Download URL: $DownloadUrl"
+# $Organization is optional — if left blank, ORGANIZATION is simply omitted
+# from the install (see SECTION 7).
+Write-Log "Organization: $(if ($Organization) { $Organization } else { '(not set)' })"
 
 # Try to pull a version number out of the filename in the URL, purely for
 # readable logging (e.g. ".../acium-sensor-setup-0.16.3.zip" -> "0.16.3").
@@ -384,28 +409,49 @@ try {
 # =========================================================================
 
 try {
+    # Ask Windows Installer itself (not the registry, not a process check)
+    # whether this ProductCode is currently installed. ProductState returns
+    # 5 when installed, or a negative value (e.g. -1) when it isn't — this
+    # is the same API msiexec consults internally, so unlike guessing at an
+    # Uninstall registry key it can't disagree with the engine's own answer,
+    # and it isn't affected by 32-bit/64-bit registry view redirection.
+    $installerCom = New-Object -ComObject WindowsInstaller.Installer
+    $productState = $installerCom.ProductState($ProductCode)
+    $isProductInstalled = ($productState -eq 5)
+    Write-Log "Windows Installer ProductState for ${ProductCode}: $productState (installed: $isProductInstalled)"
+
     Write-Log "Running msiexec silently..."
 
     # Build the argument list for msiexec.exe (Windows' built-in installer
     # engine, used to run any .msi file):
     #   /i <path>          = install this MSI
-    #   REINSTALL=ALL      = force Windows Installer to (re)write all
-    #   REINSTALLMODE=vomus  features/files/registry even if this ProductCode
-    #                        is already registered on the machine (e.g. the
-    #                        sensor was installed manually, or a previous run
-    #                        didn't get to save state). Without this, /i alone
-    #                        fails with error 1638 ("Another version of this
-    #                        product is already installed") whenever the MSI's
-    #                        ProductCode is already registered — this package
-    #                        keeps the same ProductCode across versions, only
-    #                        PackageCode/ProductVersion change, so that's a
-    #                        normal case here, not an edge case. These
-    #                        properties are harmless/no-op on a genuinely
-    #                        fresh install.
     #   /qn                = "quiet, no UI" — fully silent, no popups
     #   /norestart         = don't auto-reboot the machine even if the install wants to
     #   /l*v <path>        = write a verbose log of the install to this file,
     #                        useful for troubleshooting if something goes wrong
+    #   ORGANIZATION=...   = the tenant/organization ID configured in SECTION 1,
+    #                        so the installed sensor reports in under the right
+    #                        org. This is an MSI property the installer defines
+    #                        itself (it's listed in its own SecureCustomProperties
+    #                        and has a dedicated OrganizationIdComponent).
+    #
+    # REINSTALL=ALL / REINSTALLMODE=vomus are added ONLY when $isProductInstalled
+    # is true, i.e. only for an actual reinstall/repair/upgrade over an
+    # existing install. This matters a lot more than it looks: passing these
+    # properties on a genuine FIRST-TIME install (ProductState not 5) makes
+    # Windows Installer resolve every component's install action to Null —
+    # meaning it silently does nothing (no files copied, no service
+    # installed) while still reporting exit code 0 and "Installation
+    # completed successfully" in the log. That exact failure mode is why
+    # earlier test runs of this script reported success with nothing
+    # actually installed — confirmed by comparing an MSI log with
+    # REINSTALL=ALL set (every component: "Action: Null") against a plain
+    # /i on the same machine (every component: "Action: Local", files
+    # copied, services installed and started). A plain first-time /i does
+    # not hit error 1638 ("another version of this product is already
+    # installed") — that error is specific to re-running /i against a
+    # ProductCode Windows Installer already has recorded as installed,
+    # which is exactly the case this conditional is branching on.
     #
     # We pass this as an actual PowerShell array, not one big manually
     # quoted string. Start-Process knows how to correctly pass each array
@@ -413,10 +459,14 @@ try {
     # handling spaces in paths — manually building the string ourselves
     # with escaped quotes is a common source of subtle bugs if a file path
     # ever contains a space or a PowerShell host handles it unexpectedly.
-    $msiArgs = @(
-        '/i', $msiFile.FullName,
-        'REINSTALL=ALL',
-        'REINSTALLMODE=vomus',
+    $msiArgs = @('/i', $msiFile.FullName)
+    if ($isProductInstalled) {
+        $msiArgs += @('REINSTALL=ALL', 'REINSTALLMODE=vomus')
+    }
+    if ($Organization) {
+        $msiArgs += "ORGANIZATION=$Organization"
+    }
+    $msiArgs += @(
         '/qn',
         '/norestart',
         '/l*v', $MsiLogFile
