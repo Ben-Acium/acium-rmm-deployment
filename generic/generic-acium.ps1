@@ -19,18 +19,16 @@
       6. Cleans up the downloaded files afterward
 
 .NOTES
-    CONFIGURATION: Unlike the Datto RMM version of this script (which reads
-    AgentDownloadUrl from a Component Variable set in Datto's UI), this
-    version hardcodes the download URL and organization ID directly in
-    SECTION 1 below. Bumping to a new agent version means editing
-    $DownloadUrl in this script and redeploying it — there is no external
-    variable to update instead. This trades "edit a variable, not the
-    script" for "works identically under any RMM platform (or run
-    manually), since nothing depends on a platform-specific
-    variable/parameter mechanism." $Organization (optional) sets which
-    organization/tenant the installed sensor reports under, passed to the
-    MSI as the ORGANIZATION property when set; leave it blank to install
-    without that property.
+    CONFIGURATION: All configuration is hardcoded directly in SECTION 1
+    below — the download URL and organization ID. Bumping to a new agent
+    version means editing $DownloadUrl in this script and redeploying it —
+    there is no external variable to update instead. This keeps the script
+    self-contained and behaving identically no matter what runs it (any
+    RMM platform, a scheduled task, or manually), since nothing depends on
+    a platform-specific variable/parameter mechanism. $Organization
+    (optional) sets which organization/tenant the installed sensor reports
+    under, passed to the MSI as the ORGANIZATION property when set; leave
+    it blank to install without that property.
 
     RECURRING-RUN NOTE: Since this script may run on a schedule (not just
     once), it needs a reliable way to know "did anything actually change

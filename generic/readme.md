@@ -2,7 +2,7 @@
 
 This folder contains `generic-acium.ps1`, a PowerShell script that installs and keeps the Acium Sensor up to date across Windows endpoints.
 
-It's the same deployment logic as the [Datto RMM version](../dattormm/dattormm-acium.ps1), but **all configuration is hardcoded directly in the script** instead of being read from Datto's Component Variable system. That makes it drop-in usable from any RMM platform (NinjaOne, ConnectWise, Action1, etc.), a scheduled task, or manual execution — nothing in the script depends on a platform-specific variable/parameter mechanism.
+**All configuration is hardcoded directly in the script** instead of being read from an external variable system. That makes it drop-in usable from any RMM platform (NinjaOne, ConnectWise, Action1, etc.), a scheduled task, or manual execution — nothing in the script depends on a platform-specific variable/parameter mechanism.
 
 ## What the script does
 
@@ -19,7 +19,7 @@ The script is intended to be idempotent and safe to run on a schedule — a mach
 
 ## Configuration
 
-Unlike the Datto RMM version, there's no variable to set anywhere — everything needed is baked into the script itself. Open `generic-acium.ps1` and edit the values between the `EDIT THESE VALUES TO CONFIGURE A DEPLOYMENT` markers near the top of **SECTION 1: CONFIG**:
+There's no variable to set anywhere — everything needed is baked into the script itself. Open `generic-acium.ps1` and edit the values between the `EDIT THESE VALUES TO CONFIGURE A DEPLOYMENT` markers near the top of **SECTION 1: CONFIG**:
 
 ```powershell
 $DownloadUrl = 'https://storage.googleapis.com/ebm-sensors-prod/win/acium-sensor-setup.zip'
@@ -78,7 +78,3 @@ Whatever runs this script can read these to tell whether a failure was a network
 - **Install seems to succeed but the sensor doesn't run**: Check whether the ASP.NET Core 8.0 Runtime installed successfully in `deploy.log`, and confirm via `Get-Process AciumSensor` on the endpoint. If the runtime is present and the process still isn't running, check `msi-install.log` for the `Feature: Main; ... Action:` line — if it says `Action: Null` for every component (instead of `Action: Local`), Windows Installer silently did nothing (see the exit-code-3/1638 entry below for why, and confirm you're running a version of this script with the ProductState check — older copies always passed `REINSTALL=ALL` and could hit exactly this).
 - **Script always reinstalls, never skips**: Check that the download URL returns an `ETag` header (most servers, including Google Cloud Storage, do this by default) and that `last-installed.json` is being written and persisted between runs.
 - **Install fails with exit code 3 and `msi-install.log` shows error 1638 ("Another version of this product is already installed")**: The sensor's MSI keeps the same `ProductCode` across versions, so Windows Installer refuses a plain reinstall whenever that `ProductCode` is already registered — most commonly because the sensor was installed manually at some point (outside this script), so there's no `last-installed.json` to make the script skip it. The script checks whether the product is already installed via Windows Installer's own `ProductState` API and only adds `REINSTALL=ALL REINSTALLMODE=vomus` in that case — those properties are needed to force a reinstall over an existing registration, but must NOT be passed on a genuine first-time install: doing so makes Windows Installer resolve every component's install action to `Null`, silently installing nothing while still reporting exit code 0. If you still see 1638, confirm the deployed script includes the `ProductState` check (look for `$isProductInstalled` in SECTION 7) rather than an older copy that always passed those properties.
-
-## Relationship to the Datto RMM version
-
-This script shares the same download/ETag-check/install/cleanup logic, exit codes, and log locations as [`../dattormm/dattormm-acium.ps1`](../dattormm/dattormm-acium.ps1). Differences: where `$DownloadUrl` comes from (the Datto version reads it from a Component Variable, `$env:AgentDownloadUrl`, set in Datto's UI; this version has it hardcoded in the script), and this version also passes an `ORGANIZATION` property to the MSI install (`$Organization`, also hardcoded) — the Datto version doesn't currently set this. If you fix a bug or add a feature in one, consider porting the change to the other.
