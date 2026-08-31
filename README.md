@@ -4,11 +4,12 @@ A collection of scripts for deploying and managing software across endpoints via
 
 ## Structure
 
-Each subfolder targets a specific RMM platform and contains the scripts, along with its own README, for deploying/managing agents through that platform.
+Each subfolder targets a specific RMM platform (or a platform-agnostic use case) and contains the scripts, along with its own README, for deploying/managing agents.
 
 | Folder | Platform | Contents |
 |---|---|---|
 | [`dattormm/`](dattormm/) | Datto RMM | Deployment script for the Acium Sensor agent |
+| [`generic/`](generic/) | Any RMM / scheduled task / manual | Deployment script for the Acium Sensor agent, with configuration hardcoded directly in the script instead of an RMM's variable system |
 
 ## Adding a new script
 
