@@ -4,6 +4,10 @@ All notable changes to the scripts in this repo are documented here, grouped by 
 
 ## ninjaone/
 
+### 1.0.3 — 2026-09-18
+
+**Critical bugfix:** same em-dash/no-BOM parsing bug as `intune/` 1.0.3 below. This file had no BOM and contained em dashes (`—`) in several live `Write-Log` strings (not just comments). Windows PowerShell 5.1 reads a BOM-less `.ps1` using the system ANSI code page, which misdecodes an em dash's UTF-8 bytes into a curly right double-quote (U+201D) — a character PowerShell's parser accepts as an alternate string delimiter — corrupting string/brace parsing from that point forward and failing the whole script at the parse stage before a single line executed. Fixed by replacing every em dash with an ASCII hyphen, removing the encoding dependency entirely. Found by auditing every near-duplicate script after diagnosing the same bug in `intune-acium-remediation.ps1`/`intune-acium-detection.ps1` from a real device's `AgentExecutor.log`.
+
 ### 1.0.2 — 2026-09-17
 
 **Security fix:** the Authenticode publisher check compared the expected CN against the MSI signer's full X.509 Subject using `-notlike "*$ExpectedPublisherCN*"` — a wildcard substring match, not an exact CN comparison. With enforcement enabled, a different, unrelated valid certificate whose Subject merely contained the configured text (or wildcard characters) could pass. The script now extracts the actual CN via `GetNameInfo(SimpleName)` and compares it exactly against `$ExpectedPublisherCN`.
@@ -20,6 +24,10 @@ Initial version of `ninjaone-acium.ps1`, adapted from `generic-acium.ps1`/`datto
 
 ## connectwise-rmm/
 
+### 1.0.3 — 2026-09-18
+
+**Critical bugfix:** same em-dash/no-BOM parsing bug as `intune/` 1.0.3 below and `ninjaone/` 1.0.3 above — this file had no BOM and em dashes in live `Write-Log` strings, which Windows PowerShell 5.1 can misdecode (absent a BOM) into a curly quote character that breaks string/brace parsing before the script runs at all. Fixed by replacing every em dash with an ASCII hyphen.
+
 ### 1.0.2 — 2026-09-17
 
 **Security fix + bugfix:** same two fixes as `ninjaone/` 1.0.2 above — the Authenticode CN check now does an exact comparison against the certificate's extracted CN instead of a wildcard substring match against the full Subject, and the no-op ETag-refresh path now preserves the rest of the saved state instead of dropping `ProductCode`/`Version`/`ScriptVersion` and touching `InstalledAt`. Both flagged by automated PR review comments on `Acium-Inc/rmm-scripts` PR #1.
@@ -33,6 +41,10 @@ Initial version of `ninjaone-acium.ps1`, adapted from `generic-acium.ps1`/`datto
 Initial version of `connectwise-rmm-acium.ps1`, adapted from `generic-acium.ps1`/`dattormm-acium.ps1` (both at 1.1.0) for ConnectWise RMM (the Asio-based SaaS product, not ConnectWise Automate/LabTech, which uses a different scripting engine). ConnectWise RMM's exact mechanism for injecting a named script variable into a PowerShell script's environment could not be confirmed from public documentation at the time of writing, so configuration is **hardcoded** in SECTION 1 (same pattern as `generic-acium.ps1`) — see the `UNVERIFIED` note in the script's `.NOTES` header and the readme's opening section for what was and wasn't confirmed, and how to switch to variable-based config if you confirm the mechanism in your own tenant. Install/change-check/prerequisite/logging logic is otherwise identical to the other platform scripts.
 
 ## syncro/
+
+### 1.0.3 — 2026-09-18
+
+**Critical bugfix:** same em-dash/no-BOM parsing bug as `intune/` 1.0.3 below and `ninjaone/` 1.0.3 above — this file had no BOM and em dashes in live `Write-Log` strings, which Windows PowerShell 5.1 can misdecode (absent a BOM) into a curly quote character that breaks string/brace parsing before the script runs at all. Fixed by replacing every em dash with an ASCII hyphen.
 
 ### 1.0.2 — 2026-09-17
 
@@ -48,6 +60,10 @@ Initial version of `syncro-acium.ps1`, adapted from `generic-acium.ps1`/`dattorm
 
 ## n-able/
 
+### 1.0.3 — 2026-09-18
+
+**Critical bugfix:** same em-dash/no-BOM parsing bug as `intune/` 1.0.3 below and `ninjaone/` 1.0.3 above — this file had no BOM and em dashes in live `Write-Log` strings, which Windows PowerShell 5.1 can misdecode (absent a BOM) into a curly quote character that breaks string/brace parsing before the script runs at all. Fixed by replacing every em dash with an ASCII hyphen.
+
 ### 1.0.2 — 2026-09-17
 
 **Security fix + bugfix:** same two fixes as `ninjaone/` 1.0.2 above — the Authenticode CN check now does an exact comparison against the certificate's extracted CN instead of a wildcard substring match against the full Subject, and the no-op ETag-refresh path now preserves the rest of the saved state instead of dropping `ProductCode`/`Version`/`ScriptVersion` and touching `InstalledAt`. Both flagged by automated PR review comments on `Acium-Inc/rmm-scripts` PR #1.
@@ -62,6 +78,10 @@ Initial version of `n-able-acium.ps1`, adapted from `generic-acium.ps1`/`dattorm
 
 ## intune/
 
+### 1.0.3 — 2026-09-18
+
+**Critical bugfix:** both scripts were saved as UTF-8 without a BOM and contained em dashes (`—`) in comments and in one `Write-Host` string (`intune-acium-detection.ps1`'s "no prior install state is recorded" message). Windows PowerShell 5.1 only reads a `.ps1` file as UTF-8 when it has a BOM; without one it falls back to the system ANSI code page, which misdecodes the em dash's UTF-8 bytes into a curly right double-quote (U+201D) — a character PowerShell's parser accepts as an alternate string delimiter. That corrupted string/brace parsing well before the script did anything, so it failed at the PowerShell parse stage with "string is missing the terminator" / "missing closing '}'" errors (exit code 1, from `AgentExecutor.log`) before creating `C:\ProgramData\AciumSensor` or writing anything to `deploy.log` — both `intune-acium-detection.ps1` and `intune-acium-remediation.ps1` were completely non-functional on any endpoint without a matching code page. Fixed by replacing all em dashes with ASCII hyphens in both files, removing the encoding dependency entirely. Found via a real device reporting "Detection status - with issues" / "Remediation status: failed" with no `AciumSensor` folder on disk, diagnosed from `AgentExecutor.log`.
+
 ### 1.0.2 — 2026-09-17 (intune-acium-remediation.ps1 only)
 
 **Security fix + bugfix:** same two fixes as `ninjaone/` 1.0.2 above — the Authenticode CN check now does an exact comparison against the certificate's extracted CN instead of a wildcard substring match against the full Subject, and the no-op ETag-refresh path now preserves the rest of the saved state instead of dropping `ProductCode`/`Version`/`ScriptVersion` and touching `InstalledAt`. Both flagged by automated PR review comments on `Acium-Inc/rmm-scripts` PR #1. `intune-acium-detection.ps1` is unaffected — it never performs the signature check or writes `last-installed.json`.
@@ -75,6 +95,10 @@ Initial version of `n-able-acium.ps1`, adapted from `generic-acium.ps1`/`dattorm
 Initial version, split into `intune-acium-detection.ps1` (read-only) and `intune-acium-remediation.ps1` (does the install), deployed as an Intune Remediation rather than a single script — Intune's plain "platform script" mechanism runs once per device and never recurs, which doesn't fit this repo's recurring/idempotent design, and Remediations have no per-deployment variable system, so configuration is hardcoded in both scripts (same pattern as `generic-acium.ps1`) between `EDIT THESE VALUES` markers. `$DownloadUrl` must be kept identical across both files — see the `.NOTES` in `intune-acium-remediation.ps1`. `intune-acium-remediation.ps1`'s install logic is otherwise adapted directly from `generic-acium.ps1` 1.1.0.
 
 ## generic/
+
+### 1.2.2 — 2026-09-18
+
+**Hardening:** while diagnosing the `intune/` 1.0.3 parsing bug (em dashes in a BOM-less `.ps1` get misdecoded by Windows PowerShell 5.1 into a curly quote character that breaks string/brace parsing), this file was found to already carry a UTF-8 BOM, which does protect it from that specific failure today. But that protection depends on every future edit/paste preserving the BOM — fragile given this script gets pasted into different RMM script editors. Replaced all em dashes with ASCII hyphens and dropped the now-unnecessary BOM, removing the encoding dependency entirely rather than relying on it being preserved.
 
 ### 1.2.1 — 2026-09-17
 
@@ -102,6 +126,10 @@ Promoted from `generic-acium-beta.ps1` to production as `generic-acium.ps1` afte
 - **Added `$ScriptVersion`** tracking (this changelog).
 
 ## dattormm/
+
+### 1.2.2 — 2026-09-18
+
+**Hardening:** same as `generic/` 1.2.2 above — this file already carried a UTF-8 BOM, which does protect it from the em-dash parsing bug found in `intune/` 1.0.3, but that protection is fragile (depends on the BOM surviving every future edit/paste into Datto RMM's Component editor). Replaced all em dashes with ASCII hyphens and dropped the now-unnecessary BOM.
 
 ### 1.2.1 — 2026-09-17
 

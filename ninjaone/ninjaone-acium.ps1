@@ -10,10 +10,10 @@
     On each run, in order:
       1. Takes a machine-wide lock so two overlapping runs can't stack
       2. Checks whether the file at the URL has changed since the last
-         successful run (skips entirely if not — important since this runs
+         successful run (skips entirely if not - important since this runs
          on a recurring schedule, not just once)
       3. Downloads the installer package (a .zip) and verifies its SHA256
-         against the last successful install — a second, server-independent
+         against the last successful install - a second, server-independent
          way to answer "did anything actually change?"
       4. Checks for the ASP.NET Core 8.0 Runtime (a hard requirement for
          the sensor) and silently installs it first if missing
@@ -29,7 +29,7 @@
     CHANGELOG.md at the repo root describing what changed and why.
 
     NinjaOne Script Variables expected (defined as Automation Script
-    Variables on the script itself, NOT hardcoded in this script — that
+    Variables on the script itself, NOT hardcoded in this script - that
     way, pointing to a new agent version later is just editing a variable,
     not editing code). NinjaOne injects Script Variables into the script's
     process as environment variables for the lifetime of that run.
@@ -72,10 +72,10 @@
 
     Exit codes (NinjaOne reads this to decide if the run succeeded or failed):
         0   - Success (installed, already up to date, or deferred pending
-              a reboot — see the log for which)
+              a reboot - see the log for which)
         1   - Download failed
         2   - Could not secure the working/log directory (ACL hardening
-              failed) — refused to proceed with a privileged install
+              failed) - refused to proceed with a privileged install
         3   - Install failed
         4   - Missing or invalid Script Variable
         5   - Zip extraction failed / MSI not found inside package
@@ -85,7 +85,7 @@
 # =========================================================================
 # SECTION 1: CONFIG
 # Set up file paths and read in the settings NinjaOne passes to the
-# script. Nothing runs yet in this section — just defining values.
+# script. Nothing runs yet in this section - just defining values.
 # =========================================================================
 
 # Treat any unhandled error as script-stopping. Without this, some failures
@@ -93,10 +93,10 @@
 # unattended install.
 $ErrorActionPreference = 'Stop'
 
-# This script's own revision (not the agent's — see AgentDownloadUrl below
+# This script's own revision (not the agent's - see AgentDownloadUrl below
 # for that). Bump this whenever the script's logic changes, and record the
 # change in CHANGELOG.md at the repo root.
-$ScriptVersion = '1.0.2'
+$ScriptVersion = '1.0.3'
 
 # --- NinjaOne Script Variables (see .NOTES above) ---
 #
@@ -117,30 +117,30 @@ $Organization = $env:AgentOrganization
 # OPTIONAL. Expected Authenticode signing certificate subject CN (e.g.
 # 'Acium, Inc.'). When set, the script REFUSES to run an MSI that isn't
 # validly signed by it, and exits 6. Leave unset to run unverified packages
-# but log what the signature actually says — fill it in once you've
+# but log what the signature actually says - fill it in once you've
 # confirmed the real publisher name from the log.
 $ExpectedPublisherCN = $env:ExpectedPublisherCN
 
 # --- END SCRIPT VARIABLES ---
 
 # The MSI's ProductCode GUID for Acium Sensor. SEE "VERIFY THE PRODUCTCODE"
-# IN THE HEADER — this value is unconfirmed. It is used in SECTION 8 to ask
+# IN THE HEADER - this value is unconfirmed. It is used in SECTION 8 to ask
 # Windows Installer whether the product is already installed, which decides
 # whether the install needs REINSTALL=ALL / REINSTALLMODE=vomus (correct
 # only for a reinstall/repair) or a plain /i (needed for a genuine
 # first-time install). If this GUID is wrong, that check silently always
-# answers "not installed" — so SECTION 8 also cross-checks the registry and
+# answers "not installed" - so SECTION 8 also cross-checks the registry and
 # logs the real value.
 $ProductCode = '{8F3A2E1D-6B4C-4F7E-9A5B-2C8D1E9F3A7B}'
 
 # Used by the registry cross-check to find the product by name when the
-# ProductCode above doesn't match anything. Keep this SPECIFIC — a loose
+# ProductCode above doesn't match anything. Keep this SPECIFIC - a loose
 # pattern that also matches some other Acium-branded MSI would hand the
 # cross-check the wrong product's ProductCode. See SECTION 8.
 $DisplayNamePattern = 'Acium Sensor*'
 
-# The Windows service the MSI installs. Presence of the service — not
-# whether it happens to be running right now — is what "installed" means
+# The Windows service the MSI installs. Presence of the service - not
+# whether it happens to be running right now - is what "installed" means
 # here: a crashed or stopped service is still installed, and reinstalling
 # it on every scheduled run wouldn't fix it anyway.
 $ServiceName = 'AciumSensor'
@@ -185,7 +185,7 @@ foreach ($dir in @($RootDir, $LogDir, $WorkDir)) {
 # includes an inheritable "BUILTIN\Users: create folders / append data"
 # entry, which means a standard user can create directories inside
 # subfolders like ours. We stage an MSI in $WorkDir and then execute it as
-# SYSTEM, and we call Remove-Item -Recurse -Force on a path under it — a
+# SYSTEM, and we call Remove-Item -Recurse -Force on a path under it - a
 # directory a low-privileged user can pre-create as a junction. Removing
 # inheritance here closes both doors at once.
 #
@@ -217,7 +217,7 @@ function Protect-Directory {
 
 # Deliberately NOT $RootDir. That's the sensor's own directory
 # (C:\ProgramData\AciumSensor) and the installed service may keep state
-# there under an identity other than SYSTEM/Administrators — stripping its
+# there under an identity other than SYSTEM/Administrators - stripping its
 # ACEs on every scheduled run could break the product we're deploying.
 # $LogDir and $WorkDir are the ones that matter anyway: they hold the MSI
 # we execute as SYSTEM and the path we recursively delete.
@@ -232,12 +232,12 @@ if ((Test-Path -LiteralPath $LogFile) -and ((Get-Item -LiteralPath $LogFile).Len
 }
 
 # Write-Log adds a timestamp and saves the message to our log file, so
-# anyone troubleshooting later has a full history on disk — not just
+# anyone troubleshooting later has a full history on disk - not just
 # whatever NinjaOne happened to capture from that one run.
 #
 # It must never throw. Under $ErrorActionPreference='Stop', a log file
 # locked by a concurrent run would otherwise become an unhandled
-# terminating error at an arbitrary point in the script, exiting 1 — which
+# terminating error at an arbitrary point in the script, exiting 1 - which
 # the exit-code table documents as "download failed."
 function Write-Log {
     param([string]$Message, [string]$Level = 'INFO')
@@ -280,7 +280,7 @@ Write-Log "=== Deployment started (script version $ScriptVersion) ==="
 foreach ($dir in $aclResults.Keys) {
     if (-not $aclResults[$dir]) {
         # Fail closed. This directory inherits ProgramData's default DACL,
-        # which lets standard users create/plant a junction in it — the
+        # which lets standard users create/plant a junction in it - the
         # exact scenario Protect-Directory exists to close off. Proceeding
         # to stage and execute a privileged MSI (or recursively delete)
         # here anyway would leave that attack live.
@@ -291,14 +291,14 @@ foreach ($dir in $aclResults.Keys) {
 
 # Log exactly which account this script is actually running as. This is the
 # definitive way to confirm whether NinjaOne is truly executing as SYSTEM
-# (should show "NT AUTHORITY\SYSTEM") — useful if a UAC prompt or
+# (should show "NT AUTHORITY\SYSTEM") - useful if a UAC prompt or
 # permission issue shows up and it's unclear what context it ran under.
 $currentIdentity = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 Write-Log "Running as: $currentIdentity"
 
 # Bail out early if the download URL configured above is blank. Exit code 4
 # signals "this is a configuration problem", not a download or install
-# failure — someone editing the script left a required value empty.
+# failure - someone editing the script left a required value empty.
 if (-not $DownloadUrl) {
     Write-Log "ERROR: Missing required Script Variable (AgentDownloadUrl)." 'ERROR'
     exit 4
@@ -317,7 +317,7 @@ Write-Log "Organization: $(if ($Organization) { $Organization } else { '(not set
 
 # Try to pull a version number out of the filename in the URL, purely for
 # readable logging (e.g. ".../acium-sensor-setup-0.16.3.zip" -> "0.16.3").
-# This does NOT decide whether to skip the install — the URL may not
+# This does NOT decide whether to skip the install - the URL may not
 # contain a version at all.
 $TargetVersion = $null
 if ($DownloadUrl -match '(\d+\.\d+\.\d+)') {
@@ -339,7 +339,7 @@ function Test-PendingReboot {
     }
 
     # PendingFileRenameOperations is a VALUE under Session Manager, not a
-    # key — Test-Path on it is always false, so it has to be read as a
+    # key - Test-Path on it is always false, so it has to be read as a
     # property. It's set whenever something queued a file replacement for
     # the next boot, which is the usual reason a freshly-installed service
     # won't start yet.
@@ -372,7 +372,7 @@ if ($pendingReboot) {
 # SystemDefault alone, and OR into anything else.
 function Set-SecurityProtocol {
     $current = [Net.ServicePointManager]::SecurityProtocol
-    if ($current -eq 0) { return }   # SystemDefault — the OS already picks correctly.
+    if ($current -eq 0) { return }   # SystemDefault - the OS already picks correctly.
 
     $want = $current -bor [Net.SecurityProtocolType]::Tls12
 
@@ -403,7 +403,7 @@ function Invoke-Download {
             $webClient = New-Object System.Net.WebClient
             try {
                 # Honour whatever proxy the machine is configured with, using
-                # the current (SYSTEM) account's credentials — otherwise an
+                # the current (SYSTEM) account's credentials - otherwise an
                 # authenticating proxy 407s every endpoint behind it.
                 $webClient.Proxy = [System.Net.WebRequest]::GetSystemWebProxy()
                 $webClient.Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
@@ -487,7 +487,7 @@ function Find-InstalledProduct {
 #       install (checked via ETag, the server's fingerprint for the file)
 #   (b) the sensor is actually still installed on THIS machine
 # We need both. If someone manually uninstalls the sensor, the source file
-# hasn't changed, but the machine still needs a fresh install — checking
+# hasn't changed, but the machine still needs a fresh install - checking
 # the ETag alone would miss that and wrongly skip.
 # =========================================================================
 
@@ -500,7 +500,7 @@ if (Test-Path -LiteralPath $StateFile) {
         $lastEtag = $state.Etag
         $lastHash = $state.Sha256
     } catch {
-        # State file exists but is unreadable/corrupt — treat as "no prior state".
+        # State file exists but is unreadable/corrupt - treat as "no prior state".
         Write-Log "State file could not be read, treating as no prior state - $($_.Exception.Message)" 'WARN'
     }
 }
@@ -508,7 +508,7 @@ if (Test-Path -LiteralPath $StateFile) {
 # --- (a) Has the source file changed? ---
 
 # Ask the server for just the headers (a HEAD request), not the file
-# itself — fast and cheap since it downloads no content.
+# itself - fast and cheap since it downloads no content.
 $currentEtag = $null
 try {
     Set-SecurityProtocol
@@ -525,7 +525,7 @@ try {
     }
     Write-Log "Current file ETag from server: $(if ($currentEtag) { $currentEtag } else { '(none returned)' })"
 } catch {
-    # Not fatal — some servers don't support HEAD, and network hiccups
+    # Not fatal - some servers don't support HEAD, and network hiccups
     # happen. We just can't compare, so we fall through to a download
     # rather than silently skipping a possibly-needed update. The SHA256
     # check after the download is what keeps this from turning into a
@@ -549,11 +549,11 @@ if ($etagUnchanged -and $installState.Installed) {
 }
 
 if (-not $installState.Installed) {
-    Write-Log "Sensor is not installed on this machine — proceeding regardless of ETag."
+    Write-Log "Sensor is not installed on this machine - proceeding regardless of ETag."
 } elseif (-not $currentEtag) {
-    Write-Log "No ETag available to compare — downloading and comparing the package hash instead."
+    Write-Log "No ETag available to compare - downloading and comparing the package hash instead."
 } else {
-    Write-Log "Source file has changed since last install — proceeding."
+    Write-Log "Source file has changed since last install - proceeding."
 }
 
 # =========================================================================
@@ -576,8 +576,8 @@ try {
 # --- Second change check: the package's own hash ---
 #
 # This is the one that doesn't depend on the server. If the bucket ever
-# stops returning an ETag header — a config change, a proxy stripping
-# headers — the ETag check's only signal disappears, and the script would
+# stops returning an ETag header - a config change, a proxy stripping
+# headers - the ETag check's only signal disappears, and the script would
 # reinstall the MSI on every scheduled run across the whole fleet while
 # reporting success every time. Comparing the actual bytes we downloaded
 # against the bytes we last installed catches that regardless.
@@ -592,7 +592,7 @@ if ($lastHash -and ($currentHash -eq $lastHash) -and $installState.Installed) {
     if ($currentEtag -and ($currentEtag -ne $lastEtag)) {
         try {
             # Preserve the rest of the saved state (ProductCode/Version/
-            # ScriptVersion/InstalledAt) — this is a no-op run, not an
+            # ScriptVersion/InstalledAt) - this is a no-op run, not an
             # install, so only the ETag actually needs refreshing.
             [ordered]@{
                 Etag          = $currentEtag
@@ -614,8 +614,8 @@ if ($lastHash -and ($currentHash -eq $lastHash) -and $installState.Installed) {
 }
 
 # =========================================================================
-# SECTION 6: PREREQUISITE CHECK — ASP.NET CORE 8.0 RUNTIME
-# AciumSensor.exe is a framework-dependent .NET 8.0 app — it requires
+# SECTION 6: PREREQUISITE CHECK - ASP.NET CORE 8.0 RUNTIME
+# AciumSensor.exe is a framework-dependent .NET 8.0 app - it requires
 # Microsoft.AspNetCore.App 8.0.x to already be present, or the service
 # fails to start and the MSI rolls itself back entirely (confirmed via a
 # real failure: msiexec error 1603, underlying cause Windows Installer
@@ -626,7 +626,7 @@ if ($lastHash -and ($currentHash -eq $lastHash) -and $installState.Installed) {
 # =========================================================================
 
 # If the ASP.NET Core 8.0 shared framework folder doesn't exist, treat the
-# runtime as missing. This doesn't check the exact patch version — .NET's
+# runtime as missing. This doesn't check the exact patch version - .NET's
 # runtime resolution rolls forward to any newer 8.0.x patch, so any 8.0.x
 # present is sufficient.
 $AspNetCoreRuntimePath = 'C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App'
@@ -680,10 +680,10 @@ if ($aspNetCoreInstalled) {
 
     # STOP HERE if the runtime needs a reboot.
     #
-    # Logging 3010 as success and immediately running the sensor MSI —
-    # whose service must start for the install to commit — is precisely the
+    # Logging 3010 as success and immediately running the sensor MSI -
+    # whose service must start for the install to commit - is precisely the
     # 1603/1920 rollback this whole section exists to prevent, so
-    # continuing would reproduce it. Exit 0 (not a failure — nothing is
+    # continuing would reproduce it. Exit 0 (not a failure - nothing is
     # broken, the work is just incomplete) and let the next scheduled run
     # finish once the machine has rebooted. No state is saved, so the next
     # run does the full install.
@@ -729,7 +729,7 @@ try {
 
     if (-not $msiFile) {
         # The zip downloaded and extracted fine, but didn't contain the
-        # installer we expected — a failure, not a silent no-op.
+        # installer we expected - a failure, not a silent no-op.
         Write-Log "ERROR: $MsiFileName not found inside extracted package." 'ERROR'
         exit 5
     }
@@ -750,7 +750,7 @@ try {
     $signature     = Get-AuthenticodeSignature -LiteralPath $msiFile.FullName
     $signerSubject = if ($signature.SignerCertificate) { $signature.SignerCertificate.Subject } else { '(none)' }
     # Extract just the CN (simple name) rather than matching against the raw
-    # Subject string — a substring/wildcard match against the full Subject
+    # Subject string - a substring/wildcard match against the full Subject
     # would let a different, unrelated certificate whose Subject merely
     # contains the expected text (or wildcard characters) pass.
     $signerCN      = if ($signature.SignerCertificate) { $signature.SignerCertificate.GetNameInfo([System.Security.Cryptography.X509Certificates.X509NameType]::SimpleName, $false) } else { '(none)' }
@@ -767,7 +767,7 @@ try {
         }
         Write-Log "MSI signature verified against expected publisher."
     } elseif ($signature.Status -ne 'Valid') {
-        Write-Log "MSI is not validly signed ($($signature.Status)). Continuing because the ExpectedPublisherCN Script Variable is not set — set it to enforce this." 'WARN'
+        Write-Log "MSI is not validly signed ($($signature.Status)). Continuing because the ExpectedPublisherCN Script Variable is not set - set it to enforce this." 'WARN'
     } else {
         Write-Log "MSI is validly signed. Set the ExpectedPublisherCN Script Variable to '$signerCN' to enforce this on every run." 'WARN'
     }
@@ -781,7 +781,7 @@ try {
 
 # =========================================================================
 # SECTION 8: INSTALL
-# Run the MSI silently — this runs unattended as SYSTEM with nobody
+# Run the MSI silently - this runs unattended as SYSTEM with nobody
 # watching, so no dialog boxes and no user interaction.
 # =========================================================================
 
@@ -792,7 +792,7 @@ try {
     #
     #   * REINSTALL=ALL / REINSTALLMODE=vomus on a genuine FIRST-TIME
     #     install makes Windows Installer resolve every component's action
-    #     to Null — it silently does nothing (no files, no service) while
+    #     to Null - it silently does nothing (no files, no service) while
     #     reporting exit code 0 and "Installation completed successfully."
     #     Confirmed by diffing an MSI log with REINSTALL=ALL (every
     #     component "Action: Null") against a plain /i on the same machine
@@ -803,13 +803,13 @@ try {
     #     already installed."
     #
     # So the branch has to be right. Ask Windows Installer itself via
-    # ProductState (5 = installed, negative = not) — the same API msiexec
+    # ProductState (5 = installed, negative = not) - the same API msiexec
     # consults internally, unaffected by 32/64-bit registry redirection.
     #
     # AND cross-check the registry, because ProductState is only as good as
     # the ProductCode we hand it. If $ProductCode is wrong, ProductState
     # answers "not installed" for every machine, we take the first-time
-    # branch on an existing install, and hit 1638 — while the header
+    # branch on an existing install, and hit 1638 - while the header
     # comment claims the problem is solved. The cross-check catches that
     # and logs the real ProductCode.
     $effectiveProductCode = $ProductCode
@@ -836,8 +836,8 @@ try {
         if (-not $isProductInstalled) {
             # Only trust a name match if the sensor is ACTUALLY on this
             # machine. Without this gate, a registry entry that merely
-            # matched $DisplayNamePattern — a different Acium-branded MSI,
-            # a companion package — would flip us onto the reinstall path
+            # matched $DisplayNamePattern - a different Acium-branded MSI,
+            # a companion package - would flip us onto the reinstall path
             # for a machine where the sensor was never installed, and
             # REINSTALL=ALL on a first-time install resolves every
             # component to Action: Null. That's the silent do-nothing
@@ -849,15 +849,15 @@ try {
             # diagnosable error. When in doubt, stay on first-time.
             if ($installState.Installed) {
                 Write-Log "MISMATCH: the ProductCode configured in SECTION 1 ($ProductCode) is not registered as installed, but '$($discovered.DisplayName)' is and the sensor is present on this machine. Using the discovered ProductCode instead." 'WARN'
-                Write-Log "ACTION: update `$ProductCode in SECTION 1 to $($discovered.ProductCode) — until you do, this fallback runs on every machine." 'WARN'
+                Write-Log "ACTION: update `$ProductCode in SECTION 1 to $($discovered.ProductCode) - until you do, this fallback runs on every machine." 'WARN'
                 $effectiveProductCode = $discovered.ProductCode
                 $isProductInstalled   = $true
             } else {
-                Write-Log "Registry matched '$($discovered.DisplayName)', but the sensor itself is not installed here ($($installState.Detail)). Not trusting that match — treating this as a first-time install." 'WARN'
+                Write-Log "Registry matched '$($discovered.DisplayName)', but the sensor itself is not installed here ($($installState.Detail)). Not trusting that match - treating this as a first-time install." 'WARN'
             }
         }
     } elseif ($isProductInstalled) {
-        # ProductState says installed but nothing matched by name — most
+        # ProductState says installed but nothing matched by name - most
         # likely $DisplayNamePattern is too narrow. Trust ProductState.
         Write-Log "ProductState reports installed but no registry entry matched '$DisplayNamePattern'. Trusting ProductState." 'WARN'
     }
@@ -874,7 +874,7 @@ try {
 
     # msiexec arguments:
     #   /i <path>          = install this MSI
-    #   /qn                = quiet, no UI — fully silent
+    #   /qn                = quiet, no UI - fully silent
     #   /norestart         = never auto-reboot the machine
     #   /l*v+ <path>       = verbose log, appended
     #   ORGANIZATION=...   = tenant/org ID; an MSI property the installer
@@ -887,7 +887,7 @@ try {
     # array element containing a space, so an AgentOrganization of "my org"
     # would become  "ORGANIZATION=my org"  on the command line, which
     # msiexec parses as a malformed property. MSI properties need the quotes
-    # *inside* the argument —  ORGANIZATION="my org"  — which only building
+    # *inside* the argument -  ORGANIZATION="my org"  - which only building
     # the string ourselves gets right. ($Organization is validated for
     # embedded quotes in SECTION 2.)
     $argParts = @('/i', ('"{0}"' -f $msiFile.FullName))
@@ -902,7 +902,7 @@ try {
 
     Write-Log "msiexec $msiArgLine"
 
-    # 1618 means another Windows Installer transaction is in progress —
+    # 1618 means another Windows Installer transaction is in progress -
     # extremely common when an RMM fires several deployments at once, or
     # Windows Update is mid-install. It's transient, so retry rather than
     # reporting a deployment failure.
@@ -930,7 +930,7 @@ try {
     } elseif ($exitCode -eq 3010) {
         Write-Log "Install completed successfully (reboot required to finish)."
     } elseif ($exitCode -eq 1618) {
-        Write-Log "ERROR: msiexec still reported 1618 after $maxMsiAttempts attempts — another installation is occupying Windows Installer. See $MsiLogFile." 'ERROR'
+        Write-Log "ERROR: msiexec still reported 1618 after $maxMsiAttempts attempts - another installation is occupying Windows Installer. See $MsiLogFile." 'ERROR'
         exit 3
     } else {
         Write-Log "ERROR: msiexec exited with code $exitCode. See $MsiLogFile for details." 'ERROR'
@@ -938,7 +938,7 @@ try {
     }
 
     # Confirm the install actually did something. This is the direct guard
-    # against the "Action: Null" failure mode — a clean exit code alone is
+    # against the "Action: Null" failure mode - a clean exit code alone is
     # not evidence that anything was installed.
     $postState = Get-SensorInstallState
     if ($postState.Installed) {
@@ -946,7 +946,7 @@ try {
     } elseif ($exitCode -eq 3010) {
         Write-Log "Post-install verification: sensor not detected yet, but a reboot is pending, which is expected." 'WARN'
     } else {
-        # Do not save state — we want the next run to try again rather than
+        # Do not save state - we want the next run to try again rather than
         # skip on an ETag match for an install that didn't take.
         Write-Log "ERROR: msiexec reported success but the sensor is not installed ($($postState.Detail)). Check $MsiLogFile for 'Action: Null' on every component." 'ERROR'
         exit 3
@@ -960,7 +960,7 @@ try {
 # SECTION 9: SAVE STATE
 # Record what we just installed so the NEXT run of this recurring job can
 # compare against it and skip if nothing changed. We only reach here if the
-# install succeeded AND verified — state is never saved for a run that
+# install succeeded AND verified - state is never saved for a run that
 # failed or silently installed nothing.
 # =========================================================================
 
@@ -976,7 +976,7 @@ try {
 
     Write-Log "Saved state for next run's change check (SHA256 $currentHash$(if ($currentEtag) { ", ETag $currentEtag" } else { ', no ETag' }))."
 } catch {
-    # Not fatal to this run — the install already succeeded. It just means
+    # Not fatal to this run - the install already succeeded. It just means
     # the next run has nothing to compare against and will reinstall.
     Write-Log "Could not save state file - $($_.Exception.Message). The next run will reinstall." 'WARN'
 }
@@ -988,7 +988,7 @@ try {
 # =========================================================================
 
 # SilentlyContinue: if these are already gone or locked, don't fail the
-# whole script over a cleanup step — the install already succeeded, which
+# whole script over a cleanup step - the install already succeeded, which
 # is what actually matters.
 Remove-Item -LiteralPath $zipPath -Force -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath $extractPath -Recurse -Force -ErrorAction SilentlyContinue

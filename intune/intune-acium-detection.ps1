@@ -2,7 +2,7 @@
 
 <#
 .SYNOPSIS
-    Detection half of the Acium Sensor Intune Remediation. Read-only —
+    Detection half of the Acium Sensor Intune Remediation. Read-only -
     makes no changes to the machine. Reports "compliant" (exit 0) if the
     sensor is installed and up to date, or "non-compliant" (exit 1) to
     trigger intune-acium-remediation.ps1.
@@ -17,12 +17,12 @@
       (a) is the AciumSensor service present at all, and
       (b) does the source file's ETag match what was recorded at the last
           successful install
-    Both must hold for "compliant" — if the sensor was manually
+    Both must hold for "compliant" - if the sensor was manually
     uninstalled, the source file hasn't changed, but the machine still
     needs remediation, so ETag agreement alone isn't enough.
 
     This script deliberately does NOT download the package or touch
-    Windows Installer — Microsoft's guidance for Remediations is that
+    Windows Installer - Microsoft's guidance for Remediations is that
     detection scripts should be non-invasive, and duplicating the actual
     install logic here would only give it more ways to disagree with
     intune-acium-remediation.ps1. See .NOTES in that file for why
@@ -30,25 +30,25 @@
 
 .NOTES
     VERSION: tracked together with intune-acium-remediation.ps1's
-    $ScriptVersion — this file doesn't do enough independently to warrant
+    $ScriptVersion - this file doesn't do enough independently to warrant
     its own version number. Bump both when either changes, and record it
     in CHANGELOG.md.
 
     Exit codes (Intune's Remediations convention, NOT this repo's shared
-    exit-code table — Remediations only recognize compliant/non-compliant):
+    exit-code table - Remediations only recognize compliant/non-compliant):
         0   - Compliant. Sensor is installed and ETag matches last install.
         1   - Non-compliant. Triggers intune-acium-remediation.ps1.
 #>
 
 # =========================================================================
-# CONFIG — MUST match intune-acium-remediation.ps1
+# CONFIG - MUST match intune-acium-remediation.ps1
 # =========================================================================
 
 $ErrorActionPreference = 'Stop'
 
 # Keep this identical to $DownloadUrl in intune-acium-remediation.ps1. This
-# script only reads the server's ETag for the comparison below — it never
-# downloads the file — but if the two URLs disagree, this script can
+# script only reads the server's ETag for the comparison below - it never
+# downloads the file - but if the two URLs disagree, this script can
 # report "compliant" for a version the remediation script would actually
 # install.
 $DownloadUrl = 'https://storage.googleapis.com/ebm-sensors-prod/win/acium-sensor-setup-0.16.8.zip'
@@ -122,7 +122,7 @@ if (-not $lastEtag) {
     # changed, so let the remediation script's own download+hash check
     # settle it rather than guessing "compliant" here.
     Write-Log "Sensor service is present but no prior ETag is recorded. Non-compliant (letting remediation confirm via package hash)." 'WARN'
-    Write-Host "Acium Sensor is installed, but no prior install state is recorded — running remediation to confirm."
+    Write-Host "Acium Sensor is installed, but no prior install state is recorded - running remediation to confirm."
     exit 1
 }
 
