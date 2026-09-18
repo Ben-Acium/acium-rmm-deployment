@@ -59,17 +59,35 @@ Bumping to a new agent version means editing `$DownloadUrl` in **both files** an
 
 **Devices > Scripts and remediations > Remediations > Create**.
 
-### 2. Add the scripts
+![Devices > Scripts and remediations, with Create highlighted](images/01-remediations-create-button.png)
+
+### 2. Basics
+
+Give it a **Name** (e.g. `Acium Sensor Deployment`) and a **Description** summarizing what it does.
+
+![Basics tab: Name and Description filled in](images/02-basics-name-description.png)
+
+### 3. Settings — add the scripts
 
 - **Detection script file**: upload `intune-acium-detection.ps1`.
 - **Remediation script file**: upload `intune-acium-remediation.ps1`.
 - **Run this script using the logged-on credentials**: **No** — this must run as SYSTEM.
-- **Enforce script signature check**: your call; this repo's own Authenticode check (`$ExpectedPublisherCN`) is independent of this setting and applies to the downloaded sensor MSI, not to these deployment scripts themselves.
+- **Enforce script signature check**: **No** — these `.ps1` files aren't Authenticode-signed themselves; this repo's own signature check (`$ExpectedPublisherCN`) is independent of this setting and applies only to the downloaded sensor MSI, not to these deployment scripts. Setting this to Yes will cause Intune to reject the upload.
 - **Run script in 64-bit PowerShell**: Yes.
 
-### 3. Assign and schedule
+![Settings tab: script files uploaded and the three toggles set](images/03-settings-scripts-and-options.png)
 
-Assign to your target device group, and set a schedule — e.g. **Daily**, or hourly if you want faster convergence after a version bump. Intune also runs detection once immediately when the Remediation is first assigned to a device.
+### 4. Assignments
+
+Assign to **All devices** rather than a user group — this is a machine-wide install that runs as SYSTEM regardless of who's logged in, so targeting users (which only applies to a device when that user signs in) is unreliable for shared or unattended machines. Set a schedule — e.g. **Daily**, or hourly if you want faster convergence after a version bump. Intune also runs detection once immediately when the Remediation is first assigned to a device.
+
+![Assignments tab: All devices selected with a Daily schedule](images/04-assignments-target-and-schedule.png)
+
+### 5. Review + create
+
+Confirm the summary matches what you configured, then click **Create**.
+
+![Review + create summary screen](images/05-review-create-summary.png)
 
 ## Logs
 
