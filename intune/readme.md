@@ -89,6 +89,14 @@ Confirm the summary matches what you configured, then click **Create**.
 
 ![Review + create summary screen](images/05-review-create-summary.png)
 
+### 6. Check device status
+
+Open the Remediation you created and go to **Monitor > Device status** to see each assigned device's latest run.
+
+![Device status showing Detection status: Without issues, Remediation status: Not run](images/06-device-status-without-issues.png)
+
+**Detection status: Without issues** means detection ran and found the sensor already installed and up to date. **Remediation status: Not run** in that case is expected, not a failure — Intune only invokes the remediation script when detection reports non-compliant, so a healthy device will show "Without issues" / "Not run" indefinitely until something actually changes (a version bump, or the sensor going missing).
+
 ## Logs
 
 Both scripts write to the same log, so a device's history reads as one continuous timeline:
