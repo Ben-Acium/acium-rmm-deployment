@@ -121,7 +121,7 @@ $ScriptVersion = '1.0.3'
 
 # Direct URL to the pinned agent zip. Update this and redeploy the script
 # to ConnectWise RMM when a new agent version needs to go out.
-$DownloadUrl = 'https://storage.googleapis.com/ebm-sensors-prod/win/acium-sensor-setup-0.17.0.zip'
+$DownloadUrl = 'https://storage.googleapis.com/ebm-sensors-prod/win/acium-sensor-setup-0.17.3.zip'
 
 # The organization/tenant ID this sensor should report under, passed to the
 # MSI as the ORGANIZATION property. Optional - leave blank to install

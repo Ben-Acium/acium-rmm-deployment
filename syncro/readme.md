@@ -46,7 +46,7 @@ Click **Add Script Variable** (type **String**) for each of these:
 
 | Variable name | Required | Example value |
 |---|---|---|
-| `AgentDownloadUrl` | Yes | `https://storage.googleapis.com/ebm-sensors-prod/win/acium-sensor-setup-0.17.0.zip` |
+| `AgentDownloadUrl` | Yes | `https://storage.googleapis.com/ebm-sensors-prod/win/acium-sensor-setup-0.17.3.zip` |
 | `AgentOrganization` | No | Your org/tenant ID, passed to the MSI as the `ORGANIZATION` property |
 | `ExpectedPublisherCN` | No | Expected Authenticode signer subject CN, e.g. `Acium, Inc.` — when set, an MSI not validly signed by it is refused |
 

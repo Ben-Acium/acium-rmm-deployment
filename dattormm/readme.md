@@ -48,7 +48,7 @@ This script reads its configuration from **Component Variables**:
 
 | Variable name | Type | Required | Example value |
 |---|---|---|---|
-| `AgentDownloadUrl` | String | Yes | `https://storage.googleapis.com/ebm-sensors-prod/win/acium-sensor-setup-0.17.0.zip` |
+| `AgentDownloadUrl` | String | Yes | `https://storage.googleapis.com/ebm-sensors-prod/win/acium-sensor-setup-0.17.3.zip` |
 | `AgentOrganization` | String | No | Your org/tenant ID, passed to the MSI as the `ORGANIZATION` property |
 | `ExpectedPublisherCN` | String | No | Expected Authenticode signer subject CN, e.g. `Acium, Inc.` — when set, an MSI not validly signed by it is refused |
 

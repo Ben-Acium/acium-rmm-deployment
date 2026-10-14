@@ -23,7 +23,7 @@ The script is intended to be idempotent and safe to run on a schedule — a mach
 There's no variable to set anywhere — everything needed is baked into the script itself. Open `generic-acium.ps1` and edit the values between the `EDIT THESE VALUES TO CONFIGURE A DEPLOYMENT` markers near the top of **SECTION 1: CONFIG**:
 
 ```powershell
-$DownloadUrl = 'https://storage.googleapis.com/ebm-sensors-prod/win/acium-sensor-setup-0.17.0.zip'
+$DownloadUrl = 'https://storage.googleapis.com/ebm-sensors-prod/win/acium-sensor-setup-0.17.3.zip'
 $Organization = ''
 ```
 

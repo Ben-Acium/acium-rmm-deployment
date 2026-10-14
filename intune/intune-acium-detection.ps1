@@ -51,7 +51,7 @@ $ErrorActionPreference = 'Stop'
 # downloads the file - but if the two URLs disagree, this script can
 # report "compliant" for a version the remediation script would actually
 # install.
-$DownloadUrl = 'https://storage.googleapis.com/ebm-sensors-prod/win/acium-sensor-setup-0.17.0.zip'
+$DownloadUrl = 'https://storage.googleapis.com/ebm-sensors-prod/win/acium-sensor-setup-0.17.3.zip'
 
 # Must match intune-acium-remediation.ps1's SECTION 1 values.
 $ServiceName = 'AciumSensor'

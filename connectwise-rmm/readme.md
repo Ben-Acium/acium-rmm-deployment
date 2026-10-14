@@ -33,7 +33,7 @@ The script is idempotent and safe to run on a schedule — a machine that's alre
 All configuration is **hardcoded** in SECTION 1, between the `EDIT THESE VALUES` markers (see the warning above for why):
 
 ```powershell
-$DownloadUrl = 'https://storage.googleapis.com/ebm-sensors-prod/win/acium-sensor-setup-0.17.0.zip'
+$DownloadUrl = 'https://storage.googleapis.com/ebm-sensors-prod/win/acium-sensor-setup-0.17.3.zip'
 $Organization = ''
 $ExpectedPublisherCN = ''
 ```

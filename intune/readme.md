@@ -37,7 +37,7 @@ So this folder splits the same logic those scripts use into Intune's detect/reme
 Intune Remediation scripts have **no equivalent of a Component Variable / Script Variable system** — there's no per-deployment parameter UI. So, like `generic/generic-acium.ps1`, all configuration is **hardcoded** in each script between the `EDIT THESE VALUES` markers:
 
 ```powershell
-$DownloadUrl = 'https://storage.googleapis.com/ebm-sensors-prod/win/acium-sensor-setup-0.17.0.zip'
+$DownloadUrl = 'https://storage.googleapis.com/ebm-sensors-prod/win/acium-sensor-setup-0.17.3.zip'
 $Organization = ''
 $ExpectedPublisherCN = ''
 ```

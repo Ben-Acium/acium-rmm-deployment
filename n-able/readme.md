@@ -53,7 +53,7 @@ Define these as **Input Parameters** on the Object (Input Parameter names must b
 
 | Input Parameter name | Type | Required | Example value |
 |---|---|---|---|
-| `AgentDownloadUrl` | Text | Yes | `https://storage.googleapis.com/ebm-sensors-prod/win/acium-sensor-setup-0.17.0.zip` |
+| `AgentDownloadUrl` | Text | Yes | `https://storage.googleapis.com/ebm-sensors-prod/win/acium-sensor-setup-0.17.3.zip` |
 | `AgentOrganization` | Text | No | Your org/tenant ID, passed to the MSI as the `ORGANIZATION` property |
 | `ExpectedPublisherCN` | Text | No | Expected Authenticode signer subject CN, e.g. `Acium, Inc.` — when set, an MSI not validly signed by it is refused |
 
